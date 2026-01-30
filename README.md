@@ -16,13 +16,10 @@ This repository provides a set of high-performance agentic skills that allow you
 | Skill Name | Description | Status |
 | :--- | :--- | :--- |
 | [`google-adk-python`](./skills/google-adk-python) | Google Agent Development Kit python SKD. | ✅ Implemented |
-| `google-genai-sdk-python` | Use the right patterns for the Google GenAI Python SDK. | 🛠️ Coming Soon |
-| `veo` | Google DeepMind Veo Skills. | 🛠️ Coming Soon |
-| `nano-banana` | Gemini Image Nano Banana Skills | 🛠️ Coming Soon |
+| [`google-genai-sdk-python`](./skills/google-genai-sdk-python) | Use the right patterns for the Google GenAI Python SDK. | ✅ Implemented |
+| [`veo`](./skills/veo) | Google DeepMind Veo Skills. | ✅ Implemented |
+| [`nano-banana`](./skills/nano-banana) | Gemini Image Nano Banana Skills | ✅ Implemented |
 | `text-to-speech` | Gemini and Chirp TTS Skills. | 🛠️ Coming Soon |
-| `a2a-protocol` | Agent-to-Agent protocol skills. | 🛠️ Coming Soon |
-| `ap2` | Agent Payment Protocol Skills. | 🛠️ Coming Soon |
-| `ucp` | Universal Commerce Protocol Skills. | 🛠️ Coming Soon |
 
 ## 🛠️ Installation
 
