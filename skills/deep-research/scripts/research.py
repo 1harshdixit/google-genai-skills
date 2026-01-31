@@ -26,48 +26,6 @@ def get_client():
     # which supports Interactions and File API with API Keys.
     return genai.Client(api_key=api_key, vertexai=False)
 
-def upload_path(client, path):
-    """Uploads a file or all supported files in a directory."""
-    uploaded_files = []
-    
-    if os.path.isfile(path):
-        files_to_upload = [path]
-    elif os.path.isdir(path):
-        files_to_upload = []
-        for root, _, files in os.walk(path):
-            for file in files:
-                # Basic filter for supported text/doc types
-                if file.lower().endswith(('.txt', '.md', '.pdf', '.html', '.csv', '.py', '.js', '.ts', '.json')):
-                    files_to_upload.append(os.path.join(root, file))
-    else:
-        console.print(f"[bold red]Error:[/bold red] Path not found: {path}")
-        sys.exit(1)
-
-    if not files_to_upload:
-        console.print(f"[yellow]Warning:[/yellow] No supported files found in {path}")
-        return []
-
-    for fpath in files_to_upload:
-        console.print(f"[dim]Uploading {fpath}...[/dim]")
-        try:
-            file_obj = client.files.upload(file=fpath)
-            console.print(f"[dim]Uploaded: {file_obj.uri}[/dim]")
-            
-            # Map mime_type to correct API ContentParam type
-            # Images -> 'image'
-            # PDFs/Text -> 'document' (Deep Research supports documents via URI)
-            if file_obj.mime_type.startswith("image/"):
-                ctype = "image"
-            else:
-                ctype = "document"
-                
-            uploaded_files.append({"type": ctype, "uri": file_obj.uri, "mime_type": file_obj.mime_type})
-        except Exception as e:
-            console.print(f"[bold red]Upload failed for {fpath}:[/bold red] {e}")
-            # Continue uploading others
-            
-    return uploaded_files
-
 def main():
     parser = argparse.ArgumentParser(description="Run Gemini Deep Research Agent.")
     parser.add_argument("prompt", help="The research goal/question.")
@@ -76,25 +34,82 @@ def main():
     parser.add_argument("--no-thoughts", action="store_true", help="Hide thinking process.")
     parser.add_argument("--output", help="Save the final report to this file.")
     parser.add_argument("--follow-up", help="Interaction ID to continue.")
+    parser.add_argument("--use-file-store", action="store_true", help="Use File Search Store (RAG) instead of direct context. Better for large corpora.")
     
     args = parser.parse_args()
     client = get_client()
     
-    # 1. Prepare Input
+    # 1. Prepare Input & Tools
     input_content = []
+    tools = None
     
-    # Text Prompt
+    # Text Prompt is always needed
     input_content.append({"type": "text", "text": args.prompt})
     
-    # File Context
+    # Handle Files
     if args.file:
+        files_to_upload_paths = []
         for path in args.file:
-            uploaded_items = upload_path(client, path)
-            input_content.extend(uploaded_items)
+            if os.path.isfile(path):
+                files_to_upload_paths.append(path)
+            elif os.path.isdir(path):
+                for root, _, files in os.walk(path):
+                    for file in files:
+                        if file.lower().endswith(('.txt', '.md', '.pdf', '.html', '.csv', '.py', '.js', '.ts', '.json')):
+                            files_to_upload_paths.append(os.path.join(root, file))
+            else:
+                console.print(f"[bold red]Error:[/bold red] Path not found: {path}")
+                sys.exit(1)
+
+        if not files_to_upload_paths:
+             console.print(f"[yellow]Warning:[/yellow] No supported files found.")
+        
+        elif args.use_file_store:
+            # Mode: File Search Store (RAG)
+            console.print("[blue]Creating File Search Store...[/blue]")
+            store = client.file_search_stores.create()
+            console.print(f"[dim]Store created: {store.name}[/dim]")
+            
+            for fpath in files_to_upload_paths:
+                console.print(f"[dim]Uploading to store: {fpath}[/dim]")
+                try:
+                    # Upload directly to store (efficient)
+                    client.file_search_stores.upload_to_file_search_store(
+                        file=fpath,
+                        file_search_store_name=store.name
+                    )
+                except Exception as e:
+                    console.print(f"[bold red]Upload failed for {fpath}:[/bold red] {e}")
+            
+            # Wait for indexing (simple check, or rely on API to handle pending)
+            console.print("[blue]Files uploaded. Configuring agent...[/blue]")
+            
+            tools = [{
+                "file_search": {
+                    "file_search_store_names": [store.name]
+                }
+            }]
+            
+        else:
+            # Mode: Direct Context (Reading)
+            for fpath in files_to_upload_paths:
+                console.print(f"[dim]Uploading {fpath}...[/dim]")
+                try:
+                    file_obj = client.files.upload(file=fpath)
+                    console.print(f"[dim]Uploaded: {file_obj.uri}[/dim]")
+                    
+                    if file_obj.mime_type.startswith("image/"):
+                        ctype = "image"
+                    else:
+                        ctype = "document"
+                        
+                    input_content.append({"type": ctype, "uri": file_obj.uri, "mime_type": file_obj.mime_type})
+                except Exception as e:
+                    console.print(f"[bold red]Upload failed for {fpath}:[/bold red] {e}")
 
     agent_config = {
         "type": "deep-research",
-        "thinking_summaries": "auto" # Enable thoughts for streaming
+        "thinking_summaries": "auto"
     }
 
     # 2. Start Research (Resilient Loop)
@@ -107,25 +122,28 @@ def main():
 
     try:
         # Initial Request
+        create_kwargs = {
+            "agent": "deep-research-pro-preview-12-2025",
+            "background": True,
+            "stream": args.stream,
+            "agent_config": agent_config,
+        }
+        
         if interaction_id:
-             # Continuing session implies creating a NEW turn in the conversation
-             stream = client.interactions.create(
-                input=input_content if len(input_content) > 1 else args.prompt,
-                agent="deep-research-pro-preview-12-2025",
-                background=True,
-                stream=args.stream,
-                agent_config=agent_config,
-                previous_interaction_id=interaction_id
-            )
+             create_kwargs["input"] = input_content if len(input_content) > 1 else args.prompt
+             create_kwargs["previous_interaction_id"] = interaction_id
+             # Tools are interaction-scoped, so if we added a store, we must pass it again?
+             # Actually, if we are continuing, we might want to keep the store.
+             # But usually follow-ups are text-based clarifications.
+             # If --use-file-store was passed *again*, we add it.
+             if tools:
+                 create_kwargs["tools"] = tools
         else:
-            # Fresh session
-            stream = client.interactions.create(
-                input=input_content if len(input_content) > 1 else input_content,
-                agent="deep-research-pro-preview-12-2025",
-                background=True,
-                stream=args.stream,
-                agent_config=agent_config
-            )
+            create_kwargs["input"] = input_content if len(input_content) > 1 else input_content[0]
+            if tools:
+                create_kwargs["tools"] = tools
+
+        stream = client.interactions.create(**create_kwargs)
             
         # Process the stream with resilience
         while not is_complete:
