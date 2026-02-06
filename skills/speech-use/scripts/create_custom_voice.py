@@ -2,6 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "requests",
+#     "python-dotenv",
 #     "google-auth",
 # ]
 # ///
@@ -9,10 +10,14 @@ import argparse
 import base64
 import json
 import os
+from dotenv import load_dotenv
 import sys
 import requests
 import google.auth
 import google.auth.transport.requests
+
+
+load_dotenv()
 
 def get_credentials():
     credentials, _ = google.auth.default()
@@ -88,7 +93,21 @@ def main():
     
     project_id = args.project_id or os.environ.get("GOOGLE_CLOUD_PROJECT")
     if not project_id:
-        print("Error: --project-id or GOOGLE_CLOUD_PROJECT env var is required.")
+        print("=" * 60)
+        print("ERROR: Missing required Google Cloud Project ID!")
+        print("=" * 60)
+        print()
+        print("Please create a .env file in your project root or add the")
+        print("following environment variable to your existing .env file:")
+        print()
+        print("  GOOGLE_CLOUD_PROJECT=your-project-id")
+        print()
+        print("Alternatively, pass --project-id as a command line argument.")
+        print()
+        print("Note: For custom voice creation, ensure you have Application")
+        print("Default Credentials configured:")
+        print("  gcloud auth application-default login")
+        print("=" * 60)
         sys.exit(1)
 
     print("Generating Voice Cloning Key...")

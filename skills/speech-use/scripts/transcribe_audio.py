@@ -2,14 +2,19 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "google-cloud-speech",
+#     "python-dotenv",
 # ]
 # ///
 import argparse
 import os
+from dotenv import load_dotenv
 import sys
 from google.cloud.speech_v2 import SpeechClient
 from google.cloud.speech_v2.types import cloud_speech
 from google.api_core.client_options import ClientOptions
+
+
+load_dotenv()
 
 def get_client(location="us"):
     api_endpoint = f"{location}-speech.googleapis.com" if location != "global" else "speech.googleapis.com"
@@ -29,7 +34,20 @@ def main():
     
     project_id = args.project_id or os.environ.get("GOOGLE_CLOUD_PROJECT")
     if not project_id:
-        print("Error: --project-id or GOOGLE_CLOUD_PROJECT env var is required.")
+        print("=" * 60)
+        print("ERROR: Missing required Google Cloud Project ID!")
+        print("=" * 60)
+        print()
+        print("Please create a .env file in your project root or add the")
+        print("following environment variable to your existing .env file:")
+        print()
+        print("  GOOGLE_CLOUD_PROJECT=your-project-id")
+        print()
+        print("Alternatively, pass --project-id as a command line argument.")
+        print()
+        print("Note: For transcription, ensure you have Application Default")
+        print("Credentials configured (run: gcloud auth application-default login)")
+        print("=" * 60)
         sys.exit(1)
 
     client = get_client(args.location)

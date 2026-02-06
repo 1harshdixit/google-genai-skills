@@ -24,6 +24,7 @@ This repository provides a set of high-performance agentic skills that allow you
 | [`nano-banana-use`](./skills/nano-banana-use) | Gemini Image Nano Banana Skills (Use) | ✅ Implemented |
 | [`speech-use`](./skills/speech-use) | Gemini and Chirp TTS Skills (Use). | ✅ Implemented |
 | [`deep-research`](./skills/deep-research) | Gemini Deep Research Agent (Interactions API). | ✅ Implemented |
+| [`google-developer-knowledge`](./skills/google-developer-knowledge) | Search and retrieve Google's public developer documentation. | ✅ Implemented |
 
 ## 🛠️ Installation
 

@@ -74,3 +74,10 @@ uv run skills/veo-use/scripts/extend_video.py --video clip.mp4 --prompt "The car
 -   `--resolution`: `1080p` (default), `720p`, `4k`.
 -   `--aspect-ratio`: `16:9` (default), `9:16`.
 -   `--duration`: `6` (default), `4`, `8`.
+
+## References
+
+> **Before running scripts**, review the reference guides for prompting tips and best practices.
+
+-   [Prompting Guide](references/prompting.md) - Camera angles, movements, lens effects, and visual styles
+

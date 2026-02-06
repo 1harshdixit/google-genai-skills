@@ -2,15 +2,20 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "google-genai",
+#     "python-dotenv",
 #     "pillow",
 # ]
 # ///
 import os
+from dotenv import load_dotenv
 import argparse
 import sys
 import time
 from google import genai
 from google.genai import types
+
+
+load_dotenv()
 
 def get_client():
     api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
@@ -23,10 +28,27 @@ def get_client():
     
     if project and location and use_vertex in ("1", "true"):
         return genai.Client(vertexai=True, project=project, location=location)
-        
-    print("Error: specific environment variables not found.")
-    print("Please set GOOGLE_API_KEY or GEMINI_API_KEY.")
-    print("OR set GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION and GOOGLE_GENAI_USE_VERTEXAI=1")
+    
+    print("=" * 60)
+    print("AGENT ERROR: Missing required environment variables!")
+    print("=" * 60)
+    print()
+    print("To use Veo video generation, the user must configure their")
+    print(".env file with the following environment variables:")
+    print()
+    print("Option 1 - Using Gemini API Key:")
+    print("  GOOGLE_API_KEY=<api-key>")
+    print()
+    print("Option 2 - Using Vertex AI (recommended for Veo):")
+    print("  GOOGLE_CLOUD_PROJECT=<project-id>")
+    print("  GOOGLE_CLOUD_LOCATION=us-central1")
+    print("  GOOGLE_GENAI_USE_VERTEXAI=1")
+    print()
+    print("IMPORTANT: For Veo APIs, location MUST be 'us-central1'.")
+    print()
+    print("Please ask the user to create or update their .env file")
+    print("with the required credentials before retrying.")
+    print("=" * 60)
     sys.exit(1)
 
 def main():

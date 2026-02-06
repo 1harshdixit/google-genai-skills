@@ -68,3 +68,9 @@ uv run skills/speech-use/scripts/transcribe_audio.py audio.wav --language en-US 
 *   `--model`: Default `chirp_3`.
 *   `--language`: Default `auto`.
 *   `--location`: Cloud region (default `us`).
+
+## References
+
+> **Before running scripts**, review the reference guides for available voices and options.
+
+-   [Voices Guide](references/voices.md) - 30+ voice options with styles (Puck, Kore, Fenrir, Aoede, etc.)

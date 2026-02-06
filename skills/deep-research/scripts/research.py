@@ -2,10 +2,12 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "google-genai",
+#     "python-dotenv",
 #     "rich",
 # ]
 # ///
 import os
+from dotenv import load_dotenv
 import argparse
 import sys
 import time
@@ -15,6 +17,9 @@ from rich.console import Console
 from rich.panel import Panel
 
 console = Console()
+
+
+load_dotenv()
 
 def get_client():
     api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")

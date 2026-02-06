@@ -2,15 +2,20 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "google-genai",
+#     "python-dotenv",
 #     "pillow",
 # ]
 # ///
 import os
+from dotenv import load_dotenv
 import argparse
 import sys
 import wave
 from google import genai
 from google.genai import types
+
+
+load_dotenv()
 
 def save_wav(filename, pcm_data, channels=1, rate=24000, sample_width=2):
     with wave.open(filename, "wb") as wf:
@@ -30,10 +35,24 @@ def get_client():
     
     if project and location and use_vertex in ("1", "true"):
         return genai.Client(vertexai=True, project=project, location=location)
-        
-    print("Error: specific environment variables not found.")
-    print("Please set GOOGLE_API_KEY or GEMINI_API_KEY.")
-    print("OR set GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION and GOOGLE_GENAI_USE_VERTEXAI=1")
+    
+    print("=" * 60)
+    print("ERROR: Missing required environment variables!")
+    print("=" * 60)
+    print()
+    print("Please create a .env file in your project root or add the")
+    print("following environment variables to your existing .env file:")
+    print()
+    print("Option 1 - Using Gemini API Key:")
+    print("  GOOGLE_API_KEY=your-api-key-here")
+    print()
+    print("Option 2 - Using Vertex AI:")
+    print("  GOOGLE_CLOUD_PROJECT=your-project-id")
+    print("  GOOGLE_CLOUD_LOCATION=us-central1")
+    print("  GOOGLE_GENAI_USE_VERTEXAI=1")
+    print()
+    print("Note: For Speech APIs, location must be 'us-central1'.")
+    print("=" * 60)
     sys.exit(1)
 
 def main():
